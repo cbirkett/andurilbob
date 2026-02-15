@@ -30,4 +30,3 @@ void save_config_wl() {
     save_eeprom_wl();
 }
 #endif
-

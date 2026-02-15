@@ -58,27 +58,27 @@ void indicator_led_update(uint8_t mode, uint8_t tick) {
 uint8_t voltage_to_rgb() {
     static const uint8_t levels[] = {
     // voltage, color
-           0, 0, // black
+            0, 0, // black
         #ifdef DUAL_VOLTAGE_FLOOR
         // AA / NiMH voltages
-        4* 9, 1, // R
-        4*10, 2, // R+G
-        4*11, 3, //   G
-        4*12, 4, //   G+B
-        4*13, 5, //     B
-        4*14, 6, // R + B
-        4*16, 7, // R+G+B
-        4*20, 0, // black
+         9*dV, 1, // R
+        10*dV, 2, // R+G
+        11*dV, 3, //   G
+        12*dV, 4, //   G+B
+        13*dV, 5, //     B
+        14*dV, 6, // R + B
+        16*dV, 7, // R+G+B
+        20*dV, 0, // black
         #endif
         // li-ion voltages
-        4*29, 1, // R
-        4*33, 2, // R+G
-        4*35, 3, //   G
-        4*37, 4, //   G+B
-        4*39, 5, //     B
-        4*41, 6, // R + B
-        4*44, 7, // R+G+B  // skip; looks too similar to G+B
-         255, 7, // R+G+B
+        29*dV, 1, // R
+        33*dV, 2, // R+G
+        35*dV, 3, //   G
+        37*dV, 4, //   G+B
+        39*dV, 5, //     B
+        41*dV, 6, // R + B
+        44*dV, 7, // R+G+B  // skip; looks too similar to G+B
+          255, 7, // R+G+B
     };
     uint8_t volts = voltage;
     //if (volts < VOLTAGE_LOW) return 0;
@@ -125,7 +125,18 @@ void rgb_led_update(uint8_t mode, uint16_t arg) {
           && (ticks_since_on > 0)  // don't blink red on 1st frame
         ) {
         // use high mode if regular aux level is high or prev level was high
-        pattern = 1 + ((2 == pattern) | (prev_level >= POST_OFF_VOLTAGE_BRIGHTNESS));
+        #ifdef USE_AUX_THRESHOLD_CONFIG
+            // always high if configured for high aux
+            // otherwise 0/1/2 depending on recent main LED brightness
+            // (using >= makes it off by 1, but allows POVD at boot time)
+            if (pattern != 2)
+                pattern = (prev_level >= cfg.button_led_low_ramp_level)
+                    << (prev_level > cfg.button_led_high_ramp_level);
+        #else
+            pattern = 1
+                + ((2 == pattern)
+                   | (prev_level >= POST_OFF_VOLTAGE_BRIGHTNESS));
+        #endif
         // voltage mode
         color = RGB_LED_NUM_COLORS - 1;
     }
@@ -151,11 +162,8 @@ void rgb_led_update(uint8_t mode, uint16_t arg) {
     else {  // voltage
         // show actual voltage while asleep...
         if (go_to_standby) {
-            actual_color = voltage_to_rgb();
             // choose a color based on battery voltage
-            //if (volts >= 38) actual_color = pgm_read_byte(colors + 4);
-            //else if (volts >= 33) actual_color = pgm_read_byte(colors + 2);
-            //else actual_color = pgm_read_byte(colors + 0);
+            actual_color = voltage_to_rgb();
         }
         // ... but during preview, cycle colors quickly
         else {
@@ -207,4 +215,3 @@ void rgb_led_voltage_readout(uint8_t bright) {
     rgb_led_set(color);
 }
 #endif
-
