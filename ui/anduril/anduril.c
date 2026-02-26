@@ -94,8 +94,11 @@
 #include "anduril/off-mode.h"
 #include "anduril/ramp-mode.h"
 #include "anduril/config-mode.h"
-#include "anduril/aux-leds.h"
 #include "anduril/misc.h"
+
+#if defined(USE_AUX_RGB_LEDS) && !defined(USE_AUX_RGB_ADV)
+#include "anduril/aux-leds.h"
+#endif
 
 #ifdef USE_SUNSET_TIMER
 #include "anduril/sunset-timer.h"
@@ -150,6 +153,11 @@
 #include "anduril/smooth-steps.h"
 #endif
 
+#ifdef USE_AUX_RGB_ADV
+#include "pheripherals/aw2016/aw2016.h"
+#include "anduril/aux-leds-adv.h"
+#endif
+
 // this should be last, so other headers have a chance to declare values
 #include "anduril/load-save-config.h"
 
@@ -162,8 +170,11 @@
 #include "anduril/ramp-mode.c"
 #include "anduril/load-save-config.c"
 #include "anduril/config-mode.c"
-#include "anduril/aux-leds.c"
 #include "anduril/misc.c"
+
+#if defined(USE_AUX_RGB_LEDS) && !defined(USE_AUX_RGB_ADV)
+#include "anduril/aux-leds.c"
+#endif
 
 #ifdef USE_SUNSET_TIMER
 #include "anduril/sunset-timer.c"
@@ -221,9 +232,17 @@
 #include "anduril/smooth-steps.c"
 #endif
 
+#ifdef USE_AUX_RGB_ADV
+#include "pheripherals/aw2016/aw2016.c"
+#include "anduril/aux-leds-adv.c"
+#endif
 
 // runs one time at boot, when power is connected
 void setup() {
+    #ifdef USE_AUX_RGB_ADV
+    // initialize Adv Aux
+    aw2016_init();
+    #endif
 
     #ifndef START_AT_MEMORIZED_LEVEL
 
@@ -274,7 +293,6 @@ void setup() {
 
 }
 
-
 // runs repeatedly whenever light is "on" (not in standby)
 void loop() {
 
@@ -282,9 +300,17 @@ void loop() {
     StatePtr state = current_state;
 
     #ifdef USE_AUX_RGB_LEDS_WHILE_ON
-    // display battery charge on RGB button during use
-    if (state == steady_state)
-        rgb_led_voltage_readout(actual_level > USE_AUX_RGB_LEDS_WHILE_ON);
+        // display battery charge on RGB button during use
+        if (state == steady_state) {
+            #ifdef USE_AUX_THRESHOLD_CONFIG
+            // only show voltage if feature is enabled and
+            // we are above the configured minimum ramp level
+            if (actual_level > cfg.button_led_low_ramp_level)
+                rgb_led_voltage_readout(actual_level > cfg.button_led_high_ramp_level);
+            #else
+                rgb_led_voltage_readout(actual_level > USE_AUX_RGB_LEDS_WHILE_ON);
+            #endif
+        }
     #endif
 
     if (0) {}  // placeholder
@@ -384,7 +410,6 @@ void loop() {
 
 }
 
-
 // instead of handling EV_low_voltage in each mode,
 // it's handled globally here to make the code smaller and simpler
 void low_voltage() {
@@ -419,4 +444,3 @@ void low_voltage() {
     }
 
 }
-
