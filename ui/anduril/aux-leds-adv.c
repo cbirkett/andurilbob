@@ -183,7 +183,7 @@ void rgb_led_update(uint8_t mode, uint16_t arg) {
             is_running_adv_rainbow = 1; // first time running rainbow
             aw2016_init();
             aw2016_wake();
-            // choose between rainblow_blend or rainbow_rgb
+            // choose between rainbow_blend or rainbow_rgb
             aw2016_rainbow_blend(255);    // change brightness separately below
         }
 

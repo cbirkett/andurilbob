@@ -51,6 +51,17 @@ uint8_t lockout_state(Event event, uint16_t arg) {
             // redundant, sleep tick does the same thing
             // indicator_led_update(cfg.indicator_led_mode >> 2, 0);
         #elif defined(USE_AUX_RGB_LEDS)
+                    
+            // Adv. Aux Rainbow handling 
+            #ifdef USE_AUX_RGB_ADV
+            uint8_t color = cfg.rgb_led_lockout_mode & 0x0f;
+            uint8_t pattern = (cfg.rgb_led_lockout_mode>>4);
+            if (color != 8 && pattern ==0){
+                is_running_adv_rainbow = 0;
+                aw2016_init();
+            }
+            #endif
+
             rgb_led_update(cfg.rgb_led_lockout_mode, 0);
         #endif
     }
@@ -81,6 +92,7 @@ uint8_t lockout_state(Event event, uint16_t arg) {
         #if defined(USE_INDICATOR_LED)
         indicator_led_update(cfg.indicator_led_mode >> 2, arg);
         #elif defined(USE_AUX_RGB_LEDS)
+        
         rgb_led_update(cfg.rgb_led_lockout_mode, arg);
         #endif
         return EVENT_HANDLED;
