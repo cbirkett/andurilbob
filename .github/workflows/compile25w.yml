@@ -48,7 +48,6 @@ jobs:
     - name: Store Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_NAME }}
+        name: anduril-25w-hex
         if-no-files-found: error
-        path: |
-          hex/*.hex
+        path: hex/
